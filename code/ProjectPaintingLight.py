@@ -12,12 +12,10 @@ import tensorflow as tf
 from scipy.spatial import ConvexHull
 from cv2.ximgproc import createGuidedFilter
 
-
 assert tf.__version__ == '1.4.0'
 assert scipy.__version__ == '1.1.0'
 assert trimesh.__version__ == '2.37.1'
 assert rtree.__version__ == '0.9.3'
-
 
 # We use SR-CNN as pre-processing to remove JPEG artifacts in input images.
 # You can remove these code if you have high-quality PNG images.
@@ -28,7 +26,6 @@ srcnn = tf.keras.models.load_model('srcnn.net')
 srcnn_op = srcnn(tf.pad(ip3 / 255.0, [[0, 0], [16, 16], [16, 16], [0, 0]], 'REFLECT'))[:, 16:-16, 16:-16, :] * 255.0
 session.run(tf.global_variables_initializer())
 srcnn.load_weights('srcnn.net')
-
 
 # Global position of light source.
 gx = 0.0
@@ -77,7 +74,6 @@ def get_image_gradient(dist):
 
 
 def generate_lighting_effects(stroke_density, content):
-
     # Computing the coarse lighting effects
     # In original paper we compute the coarse effects using Gaussian filters.
     # Here we use a Gaussian pyramid to get similar results.
@@ -111,7 +107,7 @@ def generate_lighting_effects(stroke_density, content):
 
     # Normalization
     EPS = 1e-10
-    max_effect = np.max((coarse_effect_cols**2 + coarse_effect_rows**2)**0.5)
+    max_effect = np.max((coarse_effect_cols ** 2 + coarse_effect_rows ** 2) ** 0.5)
     coarse_effect_cols = (coarse_effect_cols + EPS) / (max_effect + EPS)
     coarse_effect_rows = (coarse_effect_rows + EPS) / (max_effect + EPS)
 
@@ -124,11 +120,13 @@ def generate_lighting_effects(stroke_density, content):
     return refined_result
 
 
-def run(image, mask, ambient_intensity, light_intensity, light_source_height, gamma_correction, stroke_density_clipping, light_color_red, light_color_green, light_color_blue, enabling_multiple_channel_effects, x, y):
-
+def run(image, mask, ambient_intensity, light_intensity, light_source_height, gamma_correction, stroke_density_clipping,
+        light_color_red, light_color_green, light_color_blue, enabling_multiple_channel_effects, x, y):
     # Some pre-processing to resize images and remove input JPEG artifacts.
     raw_image = min_resize(image, 512)
+    print("Preprocess srcnn...")
     raw_image = run_srcnn(raw_image)
+    print("Completed.")
     raw_image = min_resize(raw_image, 512)
     raw_image = raw_image.astype(np.float32)
     unmasked_image = raw_image.copy()
@@ -144,11 +142,14 @@ def run(image, mask, ambient_intensity, light_intensity, light_source_height, ga
     hull = ConvexHull(flattened_raw_image)
 
     # Estimate the stroke density map.
+    print("Preprocess trimesh...")
     intersector = trimesh.Trimesh(faces=hull.simplices, vertices=hull.points).ray
     start = np.tile(raw_image_center[None, :], [h * w, 1])
     direction = flattened_raw_image - start
+    print("Completed.")
     print('Begin ray intersecting ...')
-    index_tri, index_ray, locations = intersector.intersects_id(start, direction, return_locations=True, multiple_hits=True)
+    index_tri, index_ray, locations = intersector.intersects_id(start, direction, return_locations=True,
+                                                                multiple_hits=True)
     print('Intersecting finished.')
     intersections = np.zeros(shape=(h * w, c), dtype=np.float32)
     intersection_count = np.zeros(shape=(h * w, 1), dtype=np.float32)
@@ -161,9 +162,11 @@ def run(image, mask, ambient_intensity, light_intensity, light_source_height, ga
     intersections = intersections.reshape((h, w, 3))
     intersection_count = intersection_count.reshape((h, w))
     intersections[intersection_count < 1] = raw_image[intersection_count < 1]
-    intersection_distance = np.sqrt(np.sum(np.square(intersections - raw_image_center[None, None, :]), axis=2, keepdims=True))
+    intersection_distance = np.sqrt(
+        np.sum(np.square(intersections - raw_image_center[None, None, :]), axis=2, keepdims=True))
     pixel_distance = np.sqrt(np.sum(np.square(raw_image - raw_image_center[None, None, :]), axis=2, keepdims=True))
-    stroke_density = ((1.0 - np.abs(1.0 - pixel_distance / intersection_distance)) * stroke_density_clipping).clip(0, 1) * 255
+    stroke_density = ((1.0 - np.abs(1.0 - pixel_distance / intersection_distance)) * stroke_density_clipping).clip(0,
+                                                                                                                   1) * 255
 
     # A trick to improve the quality of the stroke density map.
     # It uses guided filter to remove some possible artifacts.
