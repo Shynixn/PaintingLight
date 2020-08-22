@@ -168,8 +168,8 @@ def run(image, mask, ambient_intensity, light_intensity, light_source_height, ga
     print("Completed.")
     memory_use()
 
-   # p = multiprocessing.Process(target=repeat_memory)
-  #  p.start()
+    p = multiprocessing.Process(target=repeat_memory)
+    p.start()
     print('Begin ray intersecting ...')
     index_tri, index_ray, locations = intersector.intersects_id(start, direction, return_locations=True,
                                                                 multiple_hits=True)
