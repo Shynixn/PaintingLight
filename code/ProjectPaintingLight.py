@@ -183,29 +183,14 @@ def run(image, mask, ambient_intensity, light_intensity, light_source_height, ga
         generate_lighting_effects(stroke_density, raw_image[:, :, 2])
     ], axis=2)
 
-    # Using a simple user interface to display results.
-
-    def update_mouse(event, x, y, flags, param):
-        global gx
-        global gy
-        gx = - float(x % w) / float(w) * 2.0 + 1.0
-        gy = - float(y % h) / float(h) * 2.0 + 1.0
-        return
-
     light_source_color = np.array([light_color_blue, light_color_green, light_color_red])
 
-    global gx
-    global gy
-
-    while True:
-        light_source_location = np.array([[[light_source_height, gy, gx]]], dtype=np.float32)
-        light_source_direction = light_source_location / np.sqrt(np.sum(np.square(light_source_location)))
-        final_effect = np.sum(lighting_effect * light_source_direction, axis=3).clip(0, 1)
-        if not enabling_multiple_channel_effects:
-            final_effect = np.mean(final_effect, axis=2, keepdims=True)
-        rendered_image = (ambient_intensity + final_effect * light_intensity) * light_source_color * raw_image
-        rendered_image = ((rendered_image / 255.0) ** gamma_correction) * 255.0
-        canvas = np.concatenate([raw_image, rendered_image], axis=1).clip(0, 255).astype(np.uint8)
-        cv2.imshow('Move your mouse on the canvas to play!', canvas)
-        cv2.setMouseCallback('Move your mouse on the canvas to play!', update_mouse)
-        cv2.waitKey(10)
+    light_source_location = np.array([[[light_source_height, gy, gx]]], dtype=np.float32)
+    light_source_direction = light_source_location / np.sqrt(np.sum(np.square(light_source_location)))
+    final_effect = np.sum(lighting_effect * light_source_direction, axis=3).clip(0, 1)
+    if not enabling_multiple_channel_effects:
+        final_effect = np.mean(final_effect, axis=2, keepdims=True)
+    rendered_image = (ambient_intensity + final_effect * light_intensity) * light_source_color * raw_image
+    rendered_image = ((rendered_image / 255.0) ** gamma_correction) * 255.0
+    cv2.imwrite("target.png", rendered_image)
+    print('Completed.')
