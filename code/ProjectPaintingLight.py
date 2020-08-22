@@ -9,6 +9,9 @@ import scipy
 import trimesh
 import numpy as np
 import tensorflow as tf
+import os
+import psutil
+import gc
 from scipy.spatial import ConvexHull
 from cv2.ximgproc import createGuidedFilter
 
@@ -31,6 +34,11 @@ srcnn.load_weights('srcnn.net')
 gx = 0.0
 gy = 0.0
 
+
+def memory_use():
+    process = psutil.Process(os.getpid())
+    print(process.memory_info().rss)  # in bytes
+    gc.collect()
 
 def run_srcnn(x):
     return session.run(srcnn_op, feed_dict={ip3: x[None, :, :, :]})[0].clip(0, 255).astype(np.uint8)
@@ -125,8 +133,10 @@ def run(image, mask, ambient_intensity, light_intensity, light_source_height, ga
     # Some pre-processing to resize images and remove input JPEG artifacts.
     raw_image = min_resize(image, 512)
     print("Preprocess srcnn...")
+    memory_use()
     raw_image = run_srcnn(raw_image)
     print("Completed.")
+    memory_use()
     raw_image = min_resize(raw_image, 512)
     raw_image = raw_image.astype(np.float32)
     unmasked_image = raw_image.copy()
@@ -143,10 +153,12 @@ def run(image, mask, ambient_intensity, light_intensity, light_source_height, ga
 
     # Estimate the stroke density map.
     print("Preprocess trimesh...")
+    memory_use()
     intersector = trimesh.Trimesh(faces=hull.simplices, vertices=hull.points).ray
     start = np.tile(raw_image_center[None, :], [h * w, 1])
     direction = flattened_raw_image - start
     print("Completed.")
+    memory_use()
     print('Begin ray intersecting ...')
     index_tri, index_ray, locations = intersector.intersects_id(start, direction, return_locations=True,
                                                                 multiple_hits=True)
