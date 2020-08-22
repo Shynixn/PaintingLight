@@ -36,12 +36,6 @@ srcnn.load_weights('srcnn.net')
 gx = 0.0
 gy = 0.0
 
-def repeat_memory():
-    while True:
-        memory_use()
-        time.sleep(1)
-
-
 def memory_use():
     process = psutil.Process(os.getpid())
     print(str(int(process.memory_info().rss) / 1000 / 1000) + " Mbytes")  # in bytes
@@ -168,8 +162,6 @@ def run(image, mask, ambient_intensity, light_intensity, light_source_height, ga
     print("Completed.")
     memory_use()
 
-    p = multiprocessing.Process(target=repeat_memory)
-    p.start()
     print('Begin ray intersecting ...')
     index_tri, index_ray, locations = intersector.intersects_id(start, direction, return_locations=True,
                                                                 multiple_hits=True)
