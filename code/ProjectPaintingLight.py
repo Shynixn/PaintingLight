@@ -12,6 +12,7 @@ import tensorflow as tf
 import os
 import psutil
 import gc
+import multiprocessing
 from scipy.spatial import ConvexHull
 from cv2.ximgproc import createGuidedFilter
 
@@ -37,8 +38,9 @@ gy = 0.0
 
 def memory_use():
     process = psutil.Process(os.getpid())
-    print(process.memory_info().rss)  # in bytes
+    print(str(int(process.memory_info().rss)/1000/1000) + " Mbytes")  # in bytes
     gc.collect()
+
 
 def run_srcnn(x):
     return session.run(srcnn_op, feed_dict={ip3: x[None, :, :, :]})[0].clip(0, 255).astype(np.uint8)
@@ -159,9 +161,13 @@ def run(image, mask, ambient_intensity, light_intensity, light_source_height, ga
     direction = flattened_raw_image - start
     print("Completed.")
     memory_use()
+
+    p = multiprocessing.Process(target=memory_use)
+    p.start()
     print('Begin ray intersecting ...')
     index_tri, index_ray, locations = intersector.intersects_id(start, direction, return_locations=True,
                                                                 multiple_hits=True)
+    p.join()
     print('Intersecting finished.')
     intersections = np.zeros(shape=(h * w, c), dtype=np.float32)
     intersection_count = np.zeros(shape=(h * w, 1), dtype=np.float32)
