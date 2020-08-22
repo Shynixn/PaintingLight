@@ -2,6 +2,9 @@ import cv2
 import sys
 
 image = cv2.imread(sys.argv[1])
+x = sys.argv[2]
+y = sys.argv[3]
+
 mask = None
 
 ambient_intensity = 0.45
@@ -21,5 +24,5 @@ from ProjectPaintingLight import run
 
 run(image, mask, ambient_intensity, light_intensity, light_source_height,
     gamma_correction, stroke_density_clipping, light_color_red, light_color_green,
-    light_color_blue, enabling_multiple_channel_effects)
+    light_color_blue, enabling_multiple_channel_effects, x, y)
 

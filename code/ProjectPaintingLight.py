@@ -124,7 +124,7 @@ def generate_lighting_effects(stroke_density, content):
     return refined_result
 
 
-def run(image, mask, ambient_intensity, light_intensity, light_source_height, gamma_correction, stroke_density_clipping, light_color_red, light_color_green, light_color_blue, enabling_multiple_channel_effects):
+def run(image, mask, ambient_intensity, light_intensity, light_source_height, gamma_correction, stroke_density_clipping, light_color_red, light_color_green, light_color_blue, enabling_multiple_channel_effects, x, y):
 
     # Some pre-processing to resize images and remove input JPEG artifacts.
     raw_image = min_resize(image, 512)
@@ -183,8 +183,10 @@ def run(image, mask, ambient_intensity, light_intensity, light_source_height, ga
         generate_lighting_effects(stroke_density, raw_image[:, :, 2])
     ], axis=2)
 
-    light_source_color = np.array([light_color_blue, light_color_green, light_color_red])
+    gx = - float(x % w) / float(w) * 2.0 + 1.0
+    gy = - float(y % h) / float(h) * 2.0 + 1.0
 
+    light_source_color = np.array([light_color_blue, light_color_green, light_color_red])
     light_source_location = np.array([[[light_source_height, gy, gx]]], dtype=np.float32)
     light_source_direction = light_source_location / np.sqrt(np.sum(np.square(light_source_location)))
     final_effect = np.sum(lighting_effect * light_source_direction, axis=3).clip(0, 1)
