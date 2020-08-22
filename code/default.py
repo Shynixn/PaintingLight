@@ -2,8 +2,8 @@ import cv2
 import sys
 
 image = cv2.imread(sys.argv[1])
-x = sys.argv[2]
-y = sys.argv[3]
+x = int(sys.argv[2])
+y = int(sys.argv[3])
 
 mask = None
 
