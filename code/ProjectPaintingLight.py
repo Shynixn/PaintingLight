@@ -163,16 +163,20 @@ def run(image, mask, ambient_intensity, light_intensity, light_source_height, ga
     print("Preprocess trimesh...")
     memory_use()
     intersector = trimesh.Trimesh(faces=hull.simplices, vertices=hull.points).ray
-    start = np.tile(raw_image_center[None, :], [h * w, 1])
     direction = flattened_raw_image - start
     print("Completed.")
     memory_use()
 
-    p = multiprocessing.Process(target=repeat_memory)
-    p.start()
+  #  p = multiprocessing.Process(target=repeat_memory)
+   # p.start()
     print('Begin ray intersecting ...')
-    index_tri, index_ray, locations = intersector.intersects_id(start, direction, return_locations=True,
+
+    for start in np.tile(raw_image_center[None, :], [h * w, 1]):
+        index_tri, index_ray, locations = intersector.intersects_id(start, direction, return_locations=True,
                                                                 multiple_hits=True)
+        print("Single interaction.")
+        memory_use()
+
     print('Intersecting finished.')
     intersections = np.zeros(shape=(h * w, c), dtype=np.float32)
     intersection_count = np.zeros(shape=(h * w, 1), dtype=np.float32)
